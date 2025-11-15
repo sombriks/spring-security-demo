@@ -18,6 +18,12 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
                 .httpBasic(withDefaults())
+                .authorizeHttpRequests(authorizeRequests ->
+                        authorizeRequests
+                                .requestMatchers("/")
+                                .permitAll()
+                                .anyRequest()
+                                .authenticated())
                 .build();
     }
 }

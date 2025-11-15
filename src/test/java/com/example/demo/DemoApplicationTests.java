@@ -88,4 +88,21 @@ class DemoApplicationTests {
         assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
         assertThat(result.getBody(), containsStringIgnoringCase("hello, admin root@root.com!"));
     }
+
+    @Test
+    void shouldNotGetHelloUser() {
+        HttpHeaders headers = new HttpHeaders();
+        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        assertThat(result, notNullValue());
+        assertThat(result.getStatusCode().is4xxClientError(), is(true));
+    }
+
+    @Test
+    void shouldNotGetHelloAdmin() {
+        HttpHeaders headers = new HttpHeaders();
+        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        assertThat(result, notNullValue());
+        // current filter config permits call any endpoint but does not sets user
+        assertThat(result.getStatusCode().is4xxClientError(), is(true));
+    }
 }
