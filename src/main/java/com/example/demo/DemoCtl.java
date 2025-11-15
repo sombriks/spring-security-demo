@@ -11,17 +11,17 @@ public class DemoCtl {
 
     @GetMapping
     public String index() {
-        return "Hello stranger!";
+        return "Hello, stranger!";
     }
 
     @GetMapping("protected")
     public String authenticated(@AuthenticationPrincipal UserDetails userDetails) {
-        return "Hello, " + userDetails.getUsername();
+        return String.format( "Hello, %s!", userDetails.getUsername());
     }
 
     @GetMapping("admin")
     @PreAuthorize("hasAuthority('ADM')")
     public String admin(@AuthenticationPrincipal UserDetails userDetails) {
-        return "Hello, admin " + userDetails.getUsername();
+        return String.format( "Hello, admin %s!", userDetails.getUsername());
     }
 }
