@@ -35,6 +35,6 @@ authentication outcome.
 
 - The main branch is the *zero-config* setup. See other branches to better
   understand how to secure a spring boot service.
-- [Basic authentication]
+- [Basic authentication](https://github.com/sombriks/spring-security-demo/tree/session-basic)
 - [Form login]
 - [JWT (sessionless) authentication]
