@@ -35,14 +35,14 @@ class DemoApplicationTests {
     }
 
     @Test
-    void shouldListUsers(){
+    void shouldListUsers() {
         List<MyLogin> myLogins = repository.findAll();
         assertThat(myLogins, notNullValue());
-        assertThat(myLogins,  is(not(empty())));
+        assertThat(myLogins, is(not(empty())));
     }
 
     @Test
-    void shouldEncodePassword(){
+    void shouldEncodePassword() {
         var result = encoder.encode("password");
         assertThat(result, notNullValue());
         var challenge = encoder.encode("password");
@@ -64,43 +64,43 @@ class DemoApplicationTests {
 
     @Test
     void shouldGetHelloStranger() {
-        var result = restTemplate.getForObject("/", String.class);
+        var result = restTemplate
+                .getForObject("/", String.class);
         assertThat(result, notNullValue());
         assertThat(result, containsStringIgnoringCase("hello, stranger!"));
     }
 
     @Test
     void shouldGetHelloUser() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth("bobby@tables.net", "password");
-        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        var result = restTemplate
+                .withBasicAuth("bobby@tables.net", "password")
+                .getForObject("/protected", String.class);
         assertThat(result, notNullValue());
-        assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
-        assertThat(result.getBody(), containsStringIgnoringCase("hello, bobby@tables.net!"));
+        assertThat(result, containsStringIgnoringCase("hello, bobby@tables.net!"));
     }
 
     @Test
     void shouldGetHelloAdmin() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth("root@root.com", "password");
-        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers),String.class);
+        var result = restTemplate
+                .withBasicAuth("root@root.com", "password")
+                .getForObject("/admin", String.class);
         assertThat(result, notNullValue());
-        assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
-        assertThat(result.getBody(), containsStringIgnoringCase("hello, admin root@root.com!"));
+        assertThat(result, containsStringIgnoringCase("hello, admin root@root.com!"));
     }
 
     @Test
     void shouldNotGetHelloUser() {
-        HttpHeaders headers = new HttpHeaders();
-        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        var result = restTemplate
+                .getForEntity("/protected", String.class);
         assertThat(result, notNullValue());
         assertThat(result.getStatusCode().is4xxClientError(), is(true));
     }
 
     @Test
     void shouldNotGetHelloAdmin() {
-        HttpHeaders headers = new HttpHeaders();
-        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        var result = restTemplate
+                .withBasicAuth("bobby@tables.net", "password")
+                .getForEntity("/admin",  String.class);
         assertThat(result, notNullValue());
         // current filter config permits call any endpoint but does not sets user
         assertThat(result.getStatusCode().is4xxClientError(), is(true));
