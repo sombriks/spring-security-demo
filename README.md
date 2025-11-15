@@ -1,4 +1,4 @@
-# spring-security-demo
+# [spring-security-demo](https://github.com/sombriks/spring-security-demo)
 
 some configuration samples for spring security
 
