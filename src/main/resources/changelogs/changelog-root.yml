@@ -1,0 +1,8 @@
+---
+databaseChangeLog:
+  - includeAll:
+      path: 2025/11
+      relativeToChangelogFile: true
+#  - includeAll:
+#      path: 2025/12
+#      relativeToChangelogFile: true

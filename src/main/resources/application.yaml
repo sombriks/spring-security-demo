@@ -1,0 +1,6 @@
+---
+spring:
+  application:
+    name: demo
+  liquibase:
+    change-log: changelogs/changelog-root.yml
