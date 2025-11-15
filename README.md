@@ -12,4 +12,24 @@ project generated via [spring initializr](https://start.spring.io/#!type=maven-p
 
 ## running
 
+```bash
+./mvnw clean compile spring-boot:run
+```
+
+Then pont the browser to one of these urls:
+
+- <http://localhost:8080/>
+- <http://localhost:8080/protected>
+- <http://localhost:8080/admin>
+
 ## testing
+
+```bash
+./mvnw clean compile test
+```
+
+## Noteworthy
+
+Main branch is the *zero-config* setup. See other branches to better understand
+how to secure a spring boot service.
+
