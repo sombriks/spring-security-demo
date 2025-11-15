@@ -5,6 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -27,6 +31,7 @@ class DemoApplicationTests {
 
     @Test
     void contextLoads() {
+        // spring just works
     }
 
     @Test
@@ -49,6 +54,15 @@ class DemoApplicationTests {
     }
 
     @Test
+    void shouldGetLoginByUsernameAndPassword() {
+        var username = "root@root.com";
+        var result = repository
+                .getByLogin(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+        assertThat(encoder.matches("password", result.getPassword()), is(true));
+    }
+
+    @Test
     void shouldGetHelloStranger() {
         var result = restTemplate.getForObject("/", String.class);
         assertThat(result, notNullValue());
@@ -57,16 +71,21 @@ class DemoApplicationTests {
 
     @Test
     void shouldGetHelloUser() {
-        var result = restTemplate.getForObject("/protected", String.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth("bobby@tables.net", "password");
+        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
         assertThat(result, notNullValue());
-        assertThat(result, containsStringIgnoringCase("hello, bobby@tables.net!"));
+        assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
+        assertThat(result.getBody(), containsStringIgnoringCase("hello, bobby@tables.net!"));
     }
 
     @Test
     void shouldGetHelloAdmin() {
-        var result = restTemplate.getForObject("/admin", String.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth("root@root.com", "password");
+        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers),String.class);
         assertThat(result, notNullValue());
-        assertThat(result, containsStringIgnoringCase("hello, admin root@root.com!"));
+        assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
+        assertThat(result.getBody(), containsStringIgnoringCase("hello, admin root@root.com!"));
     }
-
 }
