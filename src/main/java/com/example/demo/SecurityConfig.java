@@ -6,9 +6,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -16,16 +16,18 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) {
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtDecoder jwtDecoder) {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .formLogin(withDefaults())
-                .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests
-                                .requestMatchers("/")
-                                .permitAll()
-                                .anyRequest()
-                                .authenticated())
+                .sessionManagement(sess -> sess
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .oauth2ResourceServer(oauth -> oauth
+                        .jwt(jwt -> jwt.decoder(jwtDecoder)))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
                 .build();
     }
 }
