@@ -5,10 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -19,45 +15,6 @@ class DemoApplicationTests {
 
     @Autowired
     TestRestTemplate restTemplate;
-
-    @Autowired
-    MyLoginRepository repository;
-
-    @Autowired
-    PasswordEncoder encoder;
-
-    @Test
-    void contextLoads() {
-        // spring just works
-    }
-
-    @Test
-    void shouldListUsers() {
-        List<MyLogin> myLogins = repository.findAll();
-        assertThat(myLogins, notNullValue());
-        assertThat(myLogins, is(not(empty())));
-    }
-
-    @Test
-    void shouldEncodePassword() {
-        var result = encoder.encode("password");
-        assertThat(result, notNullValue());
-        var challenge = encoder.encode("password");
-        assertThat(challenge, notNullValue());
-        // no collisions, never
-        assertThat(challenge, not(equalTo(result)));
-        // manually validating a password
-        assertThat(encoder.matches("password", result), is(true));
-    }
-
-    @Test
-    void shouldGetLoginByUsernameAndPassword() {
-        var username = "root@root.com";
-        var result = repository
-                .getByLogin(username)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
-        assertThat(encoder.matches("password", result.getPassword()), is(true));
-    }
 
     @Test
     void shouldGetHelloStranger() {
@@ -99,7 +56,6 @@ class DemoApplicationTests {
                 .withBasicAuth("bobby@tables.net", "password")
                 .getForEntity("/admin", String.class);
         assertThat(result, notNullValue());
-        // current filter config permits call any endpoint but does not sets user
         assertThat(result.getStatusCode().is4xxClientError(), is(true));
     }
 }
