@@ -77,8 +77,9 @@ class DemoApplicationTests {
     @Test
     void shouldGetHelloUser() {
         // login first
-        doLogin("bobby@tables.net","password");
+        var cookie = doLogin("bobby@tables.net","password");
         HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, cookie);
         var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
         assertThat(result, notNullValue());
         assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
@@ -112,13 +113,15 @@ class DemoApplicationTests {
         assertThat(result.getStatusCode().is4xxClientError(), is(true));
     }
 
-    private void doLogin(String usernam, String password) {
+    private String doLogin(String usernam, String password) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("username", usernam);
         formData.add("password", password);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
-        restTemplate.postForEntity("/login", requestEntity, String.class);
+        var response = restTemplate.postForEntity("/login", requestEntity, String.class);
+        var cookie = response.getHeaders().get(HttpHeaders.SET_COOKIE).getFirst();
+        return cookie;
     }
 }
