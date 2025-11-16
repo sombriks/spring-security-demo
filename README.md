@@ -37,4 +37,4 @@ authentication outcome.
   understand how to secure a spring boot service:
   - [Basic authentication](https://github.com/sombriks/spring-security-demo/tree/session-basic)
   - [Form login](https://github.com/sombriks/spring-security-demo/tree/session-form)
-  - [JWT (sessionless) authentication]
+  - [JWT (sessionless) authentication](https://github.com/sombriks/spring-security-demo/tree/json-web-token)
