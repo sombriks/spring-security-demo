@@ -13,8 +13,6 @@ public class AuthConfig {
     @Bean
     public UserDetailsService userDetailsService(MyLoginRepository repository) {
         return username -> {
-            // create a custom call on your repository to return MyLogin by username
-            // Optional<MyLogin> getByLogin(String login);
             return repository
                     .getByLogin(username)
                     .map(UserDetailsDTO::new)
