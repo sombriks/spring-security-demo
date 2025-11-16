@@ -11,16 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AuthConfig {
 
     @Bean
-    public UserDetailsService userDetailsService(MyLoginRepository repository) {
-        return username -> {
-            return repository
-                    .getByLogin(username)
-                    .map(UserDetailsDTO::new)
-                    .orElseThrow(() -> new UsernameNotFoundException(username));
-        };
-    }
-
-    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
