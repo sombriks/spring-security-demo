@@ -24,7 +24,7 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.decoder(jwtDecoder)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/")
+                        .requestMatchers("/","/auth")
                         .permitAll()
                         .anyRequest()
                         .authenticated())

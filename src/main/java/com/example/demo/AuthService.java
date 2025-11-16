@@ -31,7 +31,7 @@ public class AuthService {
     }
 
 
-    public String getToken(UserDetails login) {
+    public String getToken(LoginDTO login) {
         // recover user and check if authentication matches
         UserDetails user = userDetailsService
                 .loadUserByUsername(login.getUsername());

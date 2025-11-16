@@ -6,11 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import java.util.List;
 
@@ -30,6 +30,9 @@ class DemoApplicationTests {
     @Autowired
     PasswordEncoder encoder;
 
+    @Autowired
+    AuthService authService;
+
     @BeforeEach
     void setUp() {
     }
@@ -40,14 +43,14 @@ class DemoApplicationTests {
     }
 
     @Test
-    void shouldListUsers(){
+    void shouldListUsers() {
         List<MyLogin> myLogins = repository.findAll();
         assertThat(myLogins, notNullValue());
-        assertThat(myLogins,  is(not(empty())));
+        assertThat(myLogins, is(not(empty())));
     }
 
     @Test
-    void shouldEncodePassword(){
+    void shouldEncodePassword() {
         var result = encoder.encode("password");
         assertThat(result, notNullValue());
         var challenge = encoder.encode("password");
@@ -76,8 +79,8 @@ class DemoApplicationTests {
 
     @Test
     void shouldGetHelloUser() {
-        HttpHeaders headers = new HttpHeaders();
-        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        HttpHeaders headers = login("bobby@tables.net", "password");
+        var result = restTemplate.exchange("/protected", HttpMethod.GET, new HttpEntity<Void>(headers), String.class);
         assertThat(result, notNullValue());
         assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
         assertThat(result.getBody(), containsStringIgnoringCase("hello, bobby@tables.net!"));
@@ -85,9 +88,8 @@ class DemoApplicationTests {
 
     @Test
     void shouldGetHelloAdmin() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth("root@root.com", "password");
-        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers),String.class);
+        HttpHeaders headers = login("root@root.com", "password");
+        var result = restTemplate.exchange("/admin", HttpMethod.GET, new HttpEntity<Void>(headers), String.class);
         assertThat(result, notNullValue());
         assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
         assertThat(result.getBody(), containsStringIgnoringCase("hello, admin root@root.com!"));
@@ -96,17 +98,23 @@ class DemoApplicationTests {
     @Test
     void shouldNotGetHelloUser() {
         HttpHeaders headers = new HttpHeaders();
-        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        var result = restTemplate.exchange("/protected", HttpMethod.GET, new HttpEntity<Void>(headers), String.class);
         assertThat(result, notNullValue());
         assertThat(result.getStatusCode().is4xxClientError(), is(true));
     }
 
     @Test
     void shouldNotGetHelloAdmin() {
-        HttpHeaders headers = new HttpHeaders();
-        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
+        HttpHeaders headers = login("bobby@tables.net", "password");
+        var result = restTemplate.exchange("/admin", HttpMethod.GET, new HttpEntity<Void>(headers), String.class);
         assertThat(result, notNullValue());
-        // current filter config permits call any endpoint but does not sets user
         assertThat(result.getStatusCode().is4xxClientError(), is(true));
+    }
+
+    private HttpHeaders login(String username, String password) {
+        var token = restTemplate.postForObject("/auth", new LoginDTO(username, password), String.class);
+        var headers = new HttpHeaders();
+        headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        return headers;
     }
 }
