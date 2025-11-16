@@ -5,9 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -100,7 +97,7 @@ class DemoApplicationTests {
     void shouldNotGetHelloAdmin() {
         var result = restTemplate
                 .withBasicAuth("bobby@tables.net", "password")
-                .getForEntity("/admin",  String.class);
+                .getForEntity("/admin", String.class);
         assertThat(result, notNullValue());
         // current filter config permits call any endpoint but does not sets user
         assertThat(result.getStatusCode().is4xxClientError(), is(true));
