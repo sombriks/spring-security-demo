@@ -1,127 +1,77 @@
 package com.example.demo;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.*;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-
-@AutoConfigureTestRestTemplate
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
+@AutoConfigureMockMvc
 class DemoApplicationTests {
 
     @Autowired
-    TestRestTemplate restTemplate;
+    private MockMvc mockMvc;
 
-    @Autowired
-    MyLoginRepository repository;
-
-    @Autowired
-    PasswordEncoder encoder;
-
-    @BeforeEach
-    void setUp() {
+    @Test
+    void shouldGetHelloStranger() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsStringIgnoringCase("hello, stranger!")));
     }
 
     @Test
-    void contextLoads() {
-        // spring just works
+    void shouldLogin() throws Exception {
+        mockMvc.perform(formLogin()
+                        .user("bobby@tables.net")
+                        .password("password"))
+                .andExpect(authenticated())
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test
-    void shouldListUsers(){
-        List<MyLogin> myLogins = repository.findAll();
-        assertThat(myLogins, notNullValue());
-        assertThat(myLogins,  is(not(empty())));
+    void shouldFailedLogin() throws Exception {
+        mockMvc.perform(formLogin().user("user").password("wrongpassword"))
+                .andExpect(unauthenticated())
+                .andExpect(redirectedUrl("/login?error"));
     }
 
     @Test
-    void shouldEncodePassword(){
-        var result = encoder.encode("password");
-        assertThat(result, notNullValue());
-        var challenge = encoder.encode("password");
-        assertThat(challenge, notNullValue());
-        // no collisions, never
-        assertThat(challenge, not(equalTo(result)));
-        // manually validating a password
-        assertThat(encoder.matches("password", result), is(true));
+    @WithMockUser(username = "bobby@tables.net")
+    void shouldGetHelloUser() throws Exception {
+        mockMvc.perform(get("/protected"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsStringIgnoringCase("hello, bobby@tables.net!")));
     }
 
     @Test
-    void shouldGetLoginByUsernameAndPassword() {
-        var username = "root@root.com";
-        var result = repository
-                .getByLogin(username)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
-        assertThat(encoder.matches("password", result.getPassword()), is(true));
+    @WithMockUser(username = "root@root.com", authorities = {"ADM"})
+    void shouldGetHelloAdmin() throws Exception {
+        mockMvc.perform(get("/admin"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsStringIgnoringCase("hello, admin root@root.com!")));
     }
 
     @Test
-    void shouldGetHelloStranger() {
-        var result = restTemplate.getForObject("/", String.class);
-        assertThat(result, notNullValue());
-        assertThat(result, containsStringIgnoringCase("hello, stranger!"));
+    void shouldNotGetHelloUser() throws Exception {
+        mockMvc.perform(get("/protected"))
+                .andExpect(status().isFound()) // does not fail rightaway, it tries to auth first
+                .andExpect(redirectedUrl("/login"));
     }
 
     @Test
-    void shouldGetHelloUser() {
-        // login first
-        var cookie = doLogin("bobby@tables.net","password");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.COOKIE, cookie);
-        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
-        assertThat(result, notNullValue());
-        assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
-        assertThat(result.getBody(), containsStringIgnoringCase("hello, bobby@tables.net!"));
+    @WithMockUser(username = "bobby@tables.net")
+    void shouldNotGetHelloAdmin() throws Exception {
+        mockMvc.perform(get("/admin"))
+                .andExpect(status().isForbidden());
     }
 
-    @Test
-    void shouldGetHelloAdmin() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth("root@root.com", "password");
-        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers),String.class);
-        assertThat(result, notNullValue());
-        assertThat(result.getStatusCode().is2xxSuccessful(), is(true));
-        assertThat(result.getBody(), containsStringIgnoringCase("hello, admin root@root.com!"));
-    }
-
-    @Test
-    void shouldNotGetHelloUser() {
-        HttpHeaders headers = new HttpHeaders();
-        var result = restTemplate.exchange("/protected", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
-        assertThat(result, notNullValue());
-        assertThat(result.getStatusCode().is4xxClientError(), is(true));
-    }
-
-    @Test
-    void shouldNotGetHelloAdmin() {
-        HttpHeaders headers = new HttpHeaders();
-        var result = restTemplate.exchange("/admin", HttpMethod.GET ,new HttpEntity<Void>(headers), String.class);
-        assertThat(result, notNullValue());
-        // current filter config permits call any endpoint but does not sets user
-        assertThat(result.getStatusCode().is4xxClientError(), is(true));
-    }
-
-    private String doLogin(String usernam, String password) {
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("username", usernam);
-        formData.add("password", password);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
-        var response = restTemplate.postForEntity("/login", requestEntity, String.class);
-        var cookie = response.getHeaders().get(HttpHeaders.SET_COOKIE).getFirst();
-        return cookie;
-    }
 }
